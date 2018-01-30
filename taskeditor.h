@@ -61,6 +61,14 @@ struct TaskItem
     void setConfPath(const QString &s) { values[Field::CONF_PATH] = s; }
 };
 
+struct Mod
+{
+    int id;
+    TaskItem::Field field;
+    QString oldValue;
+    QString newValue;
+};
+
 class TaskEditor : public QObject
 {
     Q_OBJECT
@@ -94,7 +102,10 @@ private:
 
 private:
     QList<TaskItem*> itemList;
-//    QList<QString>
+
+    QList<Mod> modList;
+    int modPos;
+
 };
 
 #endif // TASKEDITOR_H
