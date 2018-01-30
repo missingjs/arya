@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+#include "taskeditor.h"
+
 namespace Ui {
 class MainWindow;
 }
@@ -14,6 +16,8 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+
+    void setContent(const QList<TaskItem*> &items);
 
 private:
     Ui::MainWindow *ui;
