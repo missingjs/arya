@@ -3,15 +3,28 @@
 
 #include <QTableWidgetItem>
 
-const int DATA_ROLE = 10001;
+namespace {
+
+const int ID_ROLE = 10001;
+
+using _fd = TaskItem::Field;
+QList<TaskItem::Field> _columns = {
+    TaskItem::Field::PACK_NAME,
+    TaskItem::Field::PACK_VERSION,
+    TaskItem::Field::PACK_CHANNEL,
+    TaskItem::Field::NEW_USER_COUNT,
+    TaskItem::Field::RETENTION_FACTOR,
+    TaskItem::Field::APK_PATH,
+    TaskItem::Field::CONF_PATH
+};
+
+} // anonymous namespace
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
-    connect(ui->taskTable, &QTableWidget::itemChanged, this, &MainWindow::handleItemChange);
 }
 
 MainWindow::~MainWindow()
@@ -19,37 +32,33 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::setContent(const QList<TaskItem *> &items)
+void MainWindow::refreshTask()
 {
+    disconnect(ui->taskTable, &QTableWidget::itemChanged, this, nullptr);
+
     auto tb = ui->taskTable;
     tb->clearContents();
-    tb->setRowCount(items.size());
-    const QString apkpfx("/home/panda/panda/share/apk/");
-    const QString cfgpfx("/home/panda/panda/share/emulator/appconfig/");
-    for (int i = 0; i < items.size(); ++i) {
-        auto item = items[i];
-        auto nameItem = new QTableWidgetItem(item->packName);
-        nameItem->setData(DATA_ROLE, item->id);
-        tb->setItem(i, 0, nameItem);
-        tb->setItem(i, 1, new QTableWidgetItem(QString::number(item->version)));
-        tb->setItem(i, 2, new QTableWidgetItem(item->channel));
-        tb->setItem(i, 3, new QTableWidgetItem(QString::number(item->newUserCount)));
-        tb->setItem(i, 4, new QTableWidgetItem(item->retentionFactor));
-        if (item->apkPath.startsWith(apkpfx)) {
-            tb->setItem(i, 5, new QTableWidgetItem(item->apkPath.mid(apkpfx.size())));
-        } else {
-            tb->setItem(i, 5, new QTableWidgetItem(item->apkPath));
+
+    auto te = TaskEditor::instance();
+    auto tasks = te->validTasks();
+    tb->setRowCount(tasks.size());
+
+    for (int row = 0; row < tasks.size(); ++row) {
+        int id = tasks[row];
+        for (int i = 0; i < _columns.size(); ++i) {
+            TaskItem::Field f = _columns[i];
+            tb->setItem(row, i, new QTableWidgetItem(te->value(id, f)));
         }
-        if (item->confPath.startsWith(cfgpfx)) {
-            tb->setItem(i, 6, new QTableWidgetItem(item->confPath.mid(cfgpfx.size())));
-        } else {
-            tb->setItem(i, 6, new QTableWidgetItem(item->confPath));
-        }
+        tb->item(row, 0)->setData(ID_ROLE, id);
     }
+
+    connect(ui->taskTable, &QTableWidget::itemChanged, this, &MainWindow::handleItemChange);
 }
 
 void MainWindow::handleItemChange(QTableWidgetItem *item)
 {
-//    item->row(), item->column();
-//    ui->taskTable->setco
+    int r = item->row(), c = item->column();
+    int id = ui->taskTable->item(r, 0)->data(ID_ROLE).toInt();
+    TaskEditor *te = TaskEditor::instance();
+    te->update(id, _columns[c], item->text());
 }

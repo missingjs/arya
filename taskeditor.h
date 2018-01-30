@@ -1,6 +1,7 @@
 #ifndef TASKEDITOR_H
 #define TASKEDITOR_H
 
+#include <QMap>
 #include <QObject>
 
 struct TaskItem
@@ -11,53 +12,85 @@ struct TaskItem
         TASK = 2
     };
 
+    enum class Field {
+        // [0]
+        PACK_NAME,
+        PACK_VERSION,
+        PACK_CHANNEL,
+
+        // [2]
+        NEW_USER_COUNT,
+
+        // [3]
+        RETENTION_FACTOR,
+
+        // [4]
+        APK_PATH,
+
+        // [5]
+        CONF_PATH
+    };
+
     int id;
 
     Type type;
 
-    // [0]
-    QString packName;
-    int version;
-    QString channel;
+    QMap<Field, QString> values;
 
-    // [1]
-    // no use
+    bool isValidTask() const { return type == Type::TASK; }
 
-    // [2]
-    int newUserCount;
+    QString packName() const { return values[Field::PACK_NAME]; }
+    void setPackName(const QString &s) { values[Field::PACK_NAME] = s; }
 
-    // [3]
-    QString retentionFactor;
+    int packVersion() const { return values[Field::PACK_VERSION].toInt(); }
+    void setPackVersion(int v) { values[Field::PACK_VERSION] = QString::number(v); }
 
-    // [4]
-    QString apkPath;
+    QString packChannel() const { return values[Field::PACK_CHANNEL]; }
+    void setPackChannel(const QString &s) { values[Field::PACK_CHANNEL] = s; }
 
-    // [5]
-    QString confPath;
+    int newUserCount() const { return values[Field::NEW_USER_COUNT].toInt(); }
+    void setNewUserCount(int n) { values[Field::NEW_USER_COUNT] = QString::number(n); }
+
+    QString retentionFactor() const { return values[Field::RETENTION_FACTOR]; }
+    void setRetentionFactor(const QString &s) { values[Field::RETENTION_FACTOR] = s; }
+
+    QString apkPath() const { return values[Field::APK_PATH]; }
+    void setApkPath(const QString &s) { values[Field::APK_PATH] = s; }
+
+    QString confPath() const { return values[Field::CONF_PATH]; }
+    void setConfPath(const QString &s) { values[Field::CONF_PATH] = s; }
 };
 
 class TaskEditor : public QObject
 {
     Q_OBJECT
-public:
+
     explicit TaskEditor(QObject *parent = nullptr);
 
+public:
     ~TaskEditor();
+
+    static TaskEditor *instance();
 
     void addLine(const QString &line);
 
-    QList<TaskItem*> getItems() const;
-
     QList<TaskItem*> tasks() const;
 
-    void update(int id, const QString &field, const QString &value);
+    QList<int> validTasks() const;
+
+    QString value(int id, TaskItem::Field field) const;
+
+    void update(int id, TaskItem::Field field, const QString &value);
 
 signals:
+    void modified(int id, TaskItem::Field field, const QString &value);
 
 public slots:
 
 private:
     TaskItem *parseLine(const QString &line);
+
+    bool idValid(int id) const;
 
 private:
     QList<TaskItem*> itemList;

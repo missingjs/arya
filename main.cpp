@@ -12,19 +12,23 @@ int main(int argc, char *argv[])
     MainWindow w;
     w.show();
 
+    auto te = TaskEditor::instance();
+    QObject::connect(te, &TaskEditor::modified, [&]() {
+        w.setWindowModified(true);
+    });
+
     if (argc == 2) {
         QString filePath = QString::fromLocal8Bit(argv[1]);
-        TaskEditor te;
         QFile data(filePath);
         if (data.open(QFile::ReadOnly)) {
             QTextStream out(&data);
             while (!out.atEnd()) {
                 QString line = out.readLine();
-                te.addLine(line);
+                te->addLine(line);
             }
         }
 
-        w.setContent(te.tasks());
+        w.refreshTask();
 
         QString fileName = Utils::basename(filePath);
         w.setWindowTitle(QString("%1[*] - Arya Editor").arg(fileName));

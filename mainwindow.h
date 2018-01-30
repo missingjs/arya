@@ -19,7 +19,8 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    void setContent(const QList<TaskItem*> &items);
+//    void setContent(const QList<TaskItem*> &items);
+    void refreshTask();
 
 private slots:
     void handleItemChange(QTableWidgetItem *item);

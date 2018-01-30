@@ -12,9 +12,10 @@ TaskEditor::~TaskEditor()
     qDeleteAll(itemList.begin(), itemList.end());
 }
 
-QList<TaskItem *> TaskEditor::getItems() const
+TaskEditor *TaskEditor::instance()
 {
-    return itemList;
+    static TaskEditor te;
+    return &te;
 }
 
 QList<TaskItem *> TaskEditor::tasks() const
@@ -26,6 +27,38 @@ QList<TaskItem *> TaskEditor::tasks() const
         }
     }
     return items;
+}
+
+QList<int> TaskEditor::validTasks() const
+{
+    QList<int> tasks;
+    for (auto i : itemList) {
+        if (i->isValidTask()) {
+            tasks << i->id;
+        }
+    }
+    return tasks;
+}
+
+QString TaskEditor::value(int id, TaskItem::Field field) const
+{
+    if (idValid(id)) {
+        return itemList[id]->values.value(field);
+    } else {
+        return "";
+    }
+}
+
+void TaskEditor::update(int id, TaskItem::Field field, const QString &value)
+{
+    if (id < 0 || id >= itemList.size()) {
+        return;
+    }
+
+    auto item = itemList[id];
+    item->values[field] = value;
+
+    emit modified(id, field, value);
 }
 
 TaskItem *TaskEditor::parseLine(const QString &line)
@@ -43,17 +76,22 @@ TaskItem *TaskEditor::parseLine(const QString &line)
         QString fullName = fields[0];
         auto match = re.match(fullName);
         if (match.hasMatch()) {
-            item->packName = match.captured(1);
-            item->version = match.captured(2).toInt();
-            item->channel = match.captured(3);
+            item->setPackName(match.captured(1));
+            item->setPackVersion(match.captured(2).toInt());
+            item->setPackChannel(match.captured(3));
         }
 
-        item->newUserCount = fields[2].toInt();
-        item->retentionFactor = fields[3];
-        item->apkPath = fields[4];
-        item->confPath = fields[5];
+        item->setNewUserCount(fields[2].toInt());
+        item->setRetentionFactor(fields[3]);
+        item->setApkPath(fields[4]);
+        item->setConfPath(fields[5]);
     }
     return item;
+}
+
+bool TaskEditor::idValid(int id) const
+{
+    return id >= 0 && id < itemList.size();
 }
 
 void TaskEditor::addLine(const QString &line)
