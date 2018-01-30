@@ -8,6 +8,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    connect(ui->taskTable, &QTableWidget::itemChanged, this, &MainWindow::handleItemChange);
 }
 
 MainWindow::~MainWindow()
@@ -40,4 +42,10 @@ void MainWindow::setContent(const QList<TaskItem *> &items)
             tb->setItem(i, 6, new QTableWidgetItem(item->confPath));
         }
     }
+}
+
+void MainWindow::handleItemChange(QTableWidgetItem *item)
+{
+//    item->row(), item->column();
+//    ui->taskTable->setco
 }

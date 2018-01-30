@@ -59,5 +59,6 @@ TaskItem *TaskEditor::parseLine(const QString &line)
 void TaskEditor::addLine(const QString &line)
 {
     TaskItem *item = parseLine(line);
+    item->id = itemList.size();
     itemList.append(item);
 }

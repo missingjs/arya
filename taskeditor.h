@@ -11,6 +11,8 @@ struct TaskItem
         TASK = 2
     };
 
+    int id;
+
     Type type;
 
     // [0]
@@ -47,6 +49,8 @@ public:
     QList<TaskItem*> getItems() const;
 
     QList<TaskItem*> tasks() const;
+
+    void update(int id, const QString &field, const QString &value);
 
 signals:
 

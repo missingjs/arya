@@ -1,12 +1,10 @@
 #include "mainwindow.h"
 #include <QApplication>
-
-#include <QDebug>
-#include <iostream>
 #include <QFile>
 #include <QTextStream>
 
 #include "taskeditor.h"
+#include "utils.h"
 
 int main(int argc, char *argv[])
 {
@@ -14,17 +12,23 @@ int main(int argc, char *argv[])
     MainWindow w;
     w.show();
 
-    TaskEditor te;
-    QFile data("D:\\app.conf.20180130");
-    if (data.open(QFile::ReadOnly)) {
-        QTextStream out(&data);
-        while (!out.atEnd()) {
-            QString line = out.readLine();
-            te.addLine(line);
+    if (argc == 2) {
+        QString filePath = QString::fromLocal8Bit(argv[1]);
+        TaskEditor te;
+        QFile data(filePath);
+        if (data.open(QFile::ReadOnly)) {
+            QTextStream out(&data);
+            while (!out.atEnd()) {
+                QString line = out.readLine();
+                te.addLine(line);
+            }
         }
-    }
 
-    w.setContent(te.tasks());
+        w.setContent(te.tasks());
+
+        QString fileName = Utils::basename(filePath);
+        w.setWindowTitle(QString("%1[*] - Arya Editor").arg(fileName));
+    }
 
     return a.exec();
 }
