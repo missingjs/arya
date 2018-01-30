@@ -3,6 +3,8 @@
 
 #include <QTableWidgetItem>
 
+const int DATA_ROLE = 10001;
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -26,7 +28,9 @@ void MainWindow::setContent(const QList<TaskItem *> &items)
     const QString cfgpfx("/home/panda/panda/share/emulator/appconfig/");
     for (int i = 0; i < items.size(); ++i) {
         auto item = items[i];
-        tb->setItem(i, 0, new QTableWidgetItem(item->packName));
+        auto nameItem = new QTableWidgetItem(item->packName);
+        nameItem->setData(DATA_ROLE, item->id);
+        tb->setItem(i, 0, nameItem);
         tb->setItem(i, 1, new QTableWidgetItem(QString::number(item->version)));
         tb->setItem(i, 2, new QTableWidgetItem(item->channel));
         tb->setItem(i, 3, new QTableWidgetItem(QString::number(item->newUserCount)));
