@@ -82,7 +82,8 @@ void MainWindow::handleItemChange(QTableWidgetItem *item)
 
 void MainWindow::on_actionRedo_triggered()
 {
-
+    auto te = TaskEditor::instance();
+    te->redo();
 }
 
 void MainWindow::undoProp(int taskId, TaskItem::Field field, const QString &value)

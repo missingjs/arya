@@ -71,8 +71,31 @@ void TaskEditor::undo()
     case Operation::Type::UPDATE:
         undo_update(op);
         break;
+    case Operation::Type::INSERT:
+        break;
+    case Operation::Type::DELETE:
+        break;
     }
     --curPos;
+}
+
+void TaskEditor::redo()
+{
+    if (curPos == opList.size() - 1) {
+        return;
+    }
+
+    ++curPos;
+    auto op = opList[curPos];
+    switch (op->type) {
+    case Operation::Type::UPDATE:
+        redo_update(op);
+        break;
+    case Operation::Type::INSERT:
+        break;
+    case Operation::Type::DELETE:
+        break;
+    }
 }
 
 TaskItem *TaskEditor::parseLine(const QString &line)
@@ -118,6 +141,15 @@ void TaskEditor::undo_update(QSharedPointer<Operation> op)
     int id = op->upd_itemId();
     auto field = op->upd_field();
     auto value = op->upd_oldValue();
+    itemMgr.update(id, field, value);
+    emit undoUpdate(id, field, value);
+}
+
+void TaskEditor::redo_update(QSharedPointer<Operation> op)
+{
+    int id = op->upd_itemId();
+    auto field = op->upd_field();
+    auto value = op->upd_newValue();
     itemMgr.update(id, field, value);
     emit undoUpdate(id, field, value);
 }

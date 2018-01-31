@@ -166,6 +166,8 @@ public:
 
     void undo();
 
+    void redo();
+
 signals:
     void modified(int id, TaskItem::Field field, const QString &value);
 
@@ -180,6 +182,8 @@ private:
     void addOp(QSharedPointer<Operation> op);
 
     void undo_update(QSharedPointer<Operation> op);
+
+    void redo_update(QSharedPointer<Operation> op);
 
 private:
     ItemManager itemMgr;
