@@ -31,6 +31,8 @@ void TaskEditor::resetByFile(const QString &path)
             itemMgr.insert(parseLine(line));
         }
     }
+
+    sourceFile = path;
 }
 
 void TaskEditor::clear()
@@ -38,6 +40,7 @@ void TaskEditor::clear()
     itemMgr.reset();
     opList.clear();
     curPos = savePos = limitPos = -1;
+    sourceFile = "";
 }
 
 QList<int> TaskEditor::validTasks()
@@ -123,6 +126,7 @@ TaskItem *TaskEditor::parseLine(const QString &line)
     QString content = line.trimmed();
     if (content[0] == '#') {
         item = itemMgr.create(TaskItem::Type::COMMENT);
+        item->setComment(content);
     } else if (content.isEmpty()) {
         item = itemMgr.create(TaskItem::Type::EMPTY);
     } else {

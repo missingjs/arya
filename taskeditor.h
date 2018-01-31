@@ -18,6 +18,8 @@ struct TaskItem
     };
 
     enum class Field {
+        COMMENT_STRING,
+
         // [0]
         PACK_NAME,
         PACK_VERSION,
@@ -44,6 +46,9 @@ struct TaskItem
 
     TaskItem *prev{nullptr};
     TaskItem *next{nullptr};
+
+    QString comment() const { return values[Field::COMMENT_STRING]; }
+    void setComment(const QString &s) { values[Field::COMMENT_STRING] = s; }
 
     bool isValidTask() const { return type == Type::TASK; }
 
@@ -200,6 +205,8 @@ private:
     int curPos{-1};
     int savePos{-1};
     int limitPos{-1};
+
+    QString sourceFile;
 
 };
 
