@@ -1,6 +1,8 @@
 #include "taskeditor.h"
 
+#include <QFile>
 #include <QRegularExpression>
+#include <QTextStream>
 
 TaskEditor::TaskEditor(QObject *parent) : QObject(parent)
 {
@@ -9,7 +11,6 @@ TaskEditor::TaskEditor(QObject *parent) : QObject(parent)
 
 TaskEditor::~TaskEditor()
 {
-    qDeleteAll(itemList.begin(), itemList.end());
 }
 
 TaskEditor *TaskEditor::instance()
@@ -18,60 +19,48 @@ TaskEditor *TaskEditor::instance()
     return &te;
 }
 
-QList<TaskItem *> TaskEditor::tasks() const
+void TaskEditor::resetByFile(const QString &path)
 {
-    QList<TaskItem *> items;
-    for (auto i : itemList) {
-        if (i->type == TaskItem::Type::TASK) {
-            items << i;
+    itemMgr.reset();
+
+    QFile data(path);
+    if (data.open(QFile::ReadOnly)) {
+        QTextStream out(&data);
+        while (!out.atEnd()) {
+            QString line = out.readLine();
+            itemMgr.insert(parseLine(line));
         }
     }
-    return items;
 }
 
-QList<int> TaskEditor::validTasks() const
+QList<int> TaskEditor::validTasks()
 {
-    QList<int> tasks;
-    for (auto i : itemList) {
-        if (i->isValidTask()) {
-            tasks << i->id;
-        }
-    }
-    return tasks;
+    return itemMgr.validTasks();
 }
 
 QString TaskEditor::value(int id, TaskItem::Field field) const
 {
-    if (idValid(id)) {
-        return itemList[id]->values.value(field);
-    } else {
-        return "";
-    }
+    return itemMgr.value(id, field);
 }
 
 void TaskEditor::update(int id, TaskItem::Field field, const QString &value)
 {
-    if (id < 0 || id >= itemList.size()) {
-        return;
+    if (itemMgr.update(id, field, value)) {
+        emit modified(id, field, value);
     }
-
-    auto item = itemList[id];
-    item->values[field] = value;
-
-    emit modified(id, field, value);
 }
 
 TaskItem *TaskEditor::parseLine(const QString &line)
 {
+    TaskItem *item = nullptr;
     QRegularExpression re("^(.*)_(\\d+)_(\\d+[a-zA-Z]?)$");
-    TaskItem *item = new TaskItem;
     QString content = line.trimmed();
     if (content[0] == '#') {
-        item->type = TaskItem::Type::COMMENT;
+        item = itemMgr.create(TaskItem::Type::COMMENT);
     } else if (content.isEmpty()) {
-        item->type = TaskItem::Type::EMPTY;
+        item = itemMgr.create(TaskItem::Type::EMPTY);
     } else {
-        item->type = TaskItem::Type::TASK;
+        item = itemMgr.create(TaskItem::Type::TASK);
         auto fields = content.split("=");
         QString fullName = fields[0];
         auto match = re.match(fullName);
@@ -89,14 +78,87 @@ TaskItem *TaskEditor::parseLine(const QString &line)
     return item;
 }
 
-bool TaskEditor::idValid(int id) const
+ItemManager::~ItemManager()
 {
-    return id >= 0 && id < itemList.size();
+    reset();
 }
 
-void TaskEditor::addLine(const QString &line)
+TaskItem *ItemManager::create(TaskItem::Type type)
 {
-    TaskItem *item = parseLine(line);
-    item->id = itemList.size();
-    itemList.append(item);
+    int id = id_counter++;
+    auto item = new TaskItem{id, type};
+    nmap[id] = item;
+    return item;
+}
+
+void ItemManager::insert(TaskItem *item)
+{
+    if (!head) {
+        head = tail = item;
+    } else {
+        tail->next = item;
+        item->prev = tail;
+        tail = item;
+    }
+    ++node_count;
+}
+
+void ItemManager::insert(int prev, TaskItem *item)
+{
+    auto pvItem = nmap.value(prev);
+    if (!pvItem) {
+        return;
+    }
+
+    auto nxItem = pvItem->next;
+    pvItem->next = item;
+    item->prev = pvItem;
+    if (nxItem) {
+        item->next = nxItem;
+        nxItem->prev = item;
+    }
+    ++node_count;
+}
+
+void ItemManager::reset()
+{
+    id_counter = 0;
+    TaskItem *p = head, *t;
+    while (p) {
+        t = p->next;
+        delete p;
+        p = t;
+    }
+    head = tail = nullptr;
+    nmap.clear();
+}
+
+QList<int> ItemManager::validTasks()
+{
+    QList<int> tasks;
+    auto p = head;
+    while (p) {
+        if (p->isValidTask()) {
+            tasks << p->id;
+        }
+        p = p->next;
+    }
+    return tasks;
+}
+
+QString ItemManager::value(int id, TaskItem::Field field) const
+{
+    auto item = nmap.value(id);
+    return item ? item->values.value(field) : "";
+}
+
+bool ItemManager::update(int id, TaskItem::Field field, const QString &value)
+{
+    auto item = nmap.value(id);
+    if (item) {
+        item->values[field] = value;
+        return true;
+    } else {
+        return false;
+    }
 }

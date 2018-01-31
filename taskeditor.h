@@ -4,9 +4,12 @@
 #include <QMap>
 #include <QObject>
 
+class ItemManager;
+
 struct TaskItem
 {
     enum class Type {
+        DELETED = -1,
         EMPTY = 0,
         COMMENT = 1,
         TASK = 2
@@ -31,11 +34,14 @@ struct TaskItem
         CONF_PATH
     };
 
-    int id;
+    const int id;
 
-    Type type;
+    const Type type;
 
     QMap<Field, QString> values;
+
+    TaskItem *prev{nullptr};
+    TaskItem *next{nullptr};
 
     bool isValidTask() const { return type == Type::TASK; }
 
@@ -59,6 +65,39 @@ struct TaskItem
 
     QString confPath() const { return values[Field::CONF_PATH]; }
     void setConfPath(const QString &s) { values[Field::CONF_PATH] = s; }
+
+private:
+    TaskItem(int id, Type type)
+        : id{id}, type{type} {}
+
+    friend class ItemManager;
+};
+
+class ItemManager
+{
+public:
+//    ItemManager();
+    ~ItemManager();
+
+    TaskItem *create(TaskItem::Type type);
+
+    void insert(TaskItem *item);
+
+    void insert(int prev, TaskItem *item);
+
+    void reset();
+
+    QList<int> validTasks();
+
+    QString value(int id, TaskItem::Field field) const;
+
+    bool update(int id, TaskItem::Field field, const QString &value);
+
+private:
+    int id_counter{0};
+    TaskItem *head{nullptr}, *tail{nullptr};
+    int node_count{0};
+    QMap<int, TaskItem*> nmap;
 };
 
 struct Mod
@@ -67,6 +106,17 @@ struct Mod
     TaskItem::Field field;
     QString oldValue;
     QString newValue;
+};
+
+struct Operation
+{
+    enum class Type {
+        INSERT,
+        DELETE,
+        UPDATE
+    };
+
+    Type type;
 };
 
 class TaskEditor : public QObject
@@ -80,11 +130,9 @@ public:
 
     static TaskEditor *instance();
 
-    void addLine(const QString &line);
+    void resetByFile(const QString &path);
 
-    QList<TaskItem*> tasks() const;
-
-    QList<int> validTasks() const;
+    QList<int> validTasks();
 
     QString value(int id, TaskItem::Field field) const;
 
@@ -96,12 +144,11 @@ signals:
 public slots:
 
 private:
+
     TaskItem *parseLine(const QString &line);
 
-    bool idValid(int id) const;
-
 private:
-    QList<TaskItem*> itemList;
+    ItemManager itemMgr;
 
     QList<Mod> modList;
     int modPos;

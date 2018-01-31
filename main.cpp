@@ -1,7 +1,5 @@
 #include "mainwindow.h"
 #include <QApplication>
-#include <QFile>
-#include <QTextStream>
 
 #include "taskeditor.h"
 #include "utils.h"
@@ -19,17 +17,8 @@ int main(int argc, char *argv[])
 
     if (argc == 2) {
         QString filePath = QString::fromLocal8Bit(argv[1]);
-        QFile data(filePath);
-        if (data.open(QFile::ReadOnly)) {
-            QTextStream out(&data);
-            while (!out.atEnd()) {
-                QString line = out.readLine();
-                te->addLine(line);
-            }
-        }
-
+        te->resetByFile(filePath);
         w.refreshTask();
-
         QString fileName = Utils::basename(filePath);
         w.setWindowTitle(QString("%1[*] - Arya Editor").arg(fileName));
     }
