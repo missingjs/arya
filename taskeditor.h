@@ -173,6 +173,8 @@ signals:
 
     void undoUpdate(int id, TaskItem::Field field, const QString &value);
 
+    void changed(bool c);
+
 public slots:
 
 private:

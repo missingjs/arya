@@ -29,7 +29,15 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    connect(TaskEditor::instance(), &TaskEditor::undoUpdate, this, &MainWindow::undoProp);
+
+    auto te = TaskEditor::instance();
+    connect(te, &TaskEditor::modified, [=]() {
+            this->setWindowModified(true);
+    });
+    connect(te, &TaskEditor::changed, [=](bool c) {
+        this->setWindowModified(c);
+    });
+    connect(te, &TaskEditor::undoUpdate, this, &MainWindow::undoProp);
 }
 
 MainWindow::~MainWindow()

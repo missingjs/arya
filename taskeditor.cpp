@@ -77,6 +77,8 @@ void TaskEditor::undo()
         break;
     }
     --curPos;
+
+    emit changed(curPos != savePos);
 }
 
 void TaskEditor::redo()
@@ -96,6 +98,8 @@ void TaskEditor::redo()
     case Operation::Type::DELETE:
         break;
     }
+
+    emit changed(curPos != savePos);
 }
 
 TaskItem *TaskEditor::parseLine(const QString &line)
