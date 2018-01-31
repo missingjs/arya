@@ -21,7 +21,7 @@ TaskEditor *TaskEditor::instance()
 
 void TaskEditor::resetByFile(const QString &path)
 {
-    itemMgr.reset();
+    clear();
 
     QFile data(path);
     if (data.open(QFile::ReadOnly)) {
@@ -31,9 +31,13 @@ void TaskEditor::resetByFile(const QString &path)
             itemMgr.insert(parseLine(line));
         }
     }
+}
 
+void TaskEditor::clear()
+{
+    itemMgr.reset();
     opList.clear();
-    curPos = savePos = -1;
+    curPos = savePos = limitPos = -1;
 }
 
 QList<int> TaskEditor::validTasks()
@@ -100,6 +104,16 @@ void TaskEditor::redo()
     }
 
     emit changed(curPos != savePos);
+}
+
+bool TaskEditor::needSave()
+{
+    return curPos != savePos;
+}
+
+void TaskEditor::save()
+{
+    // TODO
 }
 
 TaskItem *TaskEditor::parseLine(const QString &line)

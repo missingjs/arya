@@ -1,8 +1,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <QApplication>
 #include <QDebug>
 #include <QFileDialog>
+#include <QMessageBox>
 #include <QTableWidgetItem>
 
 #include "utils.h"
@@ -124,4 +126,41 @@ void MainWindow::on_actionUndo_triggered()
 {
     auto te = TaskEditor::instance();
     te->undo();
+}
+
+void MainWindow::on_actionClose_triggered()
+{
+    auto te = TaskEditor::instance();
+    if (preClose()) {
+        te->clear();
+        clearEditor();
+    }
+}
+
+void MainWindow::clearEditor()
+{
+    setWindowTitle("Arya Editor");
+    ui->taskTable->clearContents();
+    ui->taskTable->setRowCount(0);
+}
+
+bool MainWindow::preClose()
+{
+    auto te = TaskEditor::instance();
+    if (te->needSave()) {
+        auto result = QMessageBox::question(this, "保存", "文件已修改，是否保存？", QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+        if (result == QMessageBox::Yes) {
+            te->save();
+        } else if (result == QMessageBox::Cancel) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void MainWindow::on_actionExit_triggered()
+{
+    if (preClose()) {
+        QApplication::exit(0);
+    }
 }

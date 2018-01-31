@@ -158,6 +158,8 @@ public:
 
     void resetByFile(const QString &path);
 
+    void clear();
+
     QList<int> validTasks();
 
     QString value(int id, TaskItem::Field field) const;
@@ -167,6 +169,10 @@ public:
     void undo();
 
     void redo();
+
+    bool needSave();
+
+    void save();
 
 signals:
     void modified(int id, TaskItem::Field field, const QString &value);

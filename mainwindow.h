@@ -34,6 +34,16 @@ private slots:
 
     void on_actionUndo_triggered();
 
+    void on_actionClose_triggered();
+
+    void on_actionExit_triggered();
+
+private:
+
+    void clearEditor();
+
+    bool preClose();
+
 private:
     Ui::MainWindow *ui;
 
