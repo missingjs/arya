@@ -193,6 +193,7 @@ private:
     QList<QSharedPointer<Operation>> opList;
     int curPos{-1};
     int savePos{-1};
+    int limitPos{-1};
 
 };
 

@@ -83,7 +83,7 @@ void TaskEditor::undo()
 
 void TaskEditor::redo()
 {
-    if (curPos == opList.size() - 1) {
+    if (curPos == limitPos || curPos == opList.size() - 1) {
         return;
     }
 
@@ -138,6 +138,7 @@ void TaskEditor::addOp(QSharedPointer<Operation> op)
         opList[curPos+1] = op;
     }
     ++curPos;
+    limitPos = curPos;
 }
 
 void TaskEditor::undo_update(QSharedPointer<Operation> op)
