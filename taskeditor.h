@@ -3,6 +3,8 @@
 
 #include <QMap>
 #include <QObject>
+#include <QSharedPointer>
+#include <QVariant>
 
 class ItemManager;
 
@@ -73,6 +75,8 @@ private:
     friend class ItemManager;
 };
 
+Q_DECLARE_METATYPE(TaskItem::Field)
+
 class ItemManager
 {
 public:
@@ -83,7 +87,7 @@ public:
 
     void insert(TaskItem *item);
 
-    void insert(int prev, TaskItem *item);
+    void insert(TaskItem *item, int next);
 
     void reset();
 
@@ -100,13 +104,6 @@ private:
     QMap<int, TaskItem*> nmap;
 };
 
-struct Mod
-{
-    int id;
-    TaskItem::Field field;
-    QString oldValue;
-    QString newValue;
-};
 
 struct Operation
 {
@@ -116,7 +113,36 @@ struct Operation
         UPDATE
     };
 
-    Type type;
+    const Type type;
+    QVariantMap prop;
+
+    Operation(Type type)
+        : type{type}, prop{} {}
+
+    static QSharedPointer<Operation> ins() { return QSharedPointer<Operation>::create(Type::INSERT); }
+    static QSharedPointer<Operation> del() { return QSharedPointer<Operation>::create(Type::DELETE); }
+    static QSharedPointer<Operation> upd() { return QSharedPointer<Operation>::create(Type::UPDATE); }
+
+    // insert
+    int ins_nextItemId() const { return prop["insert.next_id"].toInt(); }
+    void ins_setNextItemId(int id) { prop["insert.next_id"] = id; }
+
+    // delete
+    int del_itemId() const { return prop["delete.item_id"].toInt(); }
+    void del_setItemId(int id) { prop["delete.item_id"] = id; }
+
+    // update
+    int upd_itemId() const { return prop["update.item_id"].toInt(); }
+    void upd_setItemId(int id) { prop["update.item_id"] = id; }
+
+    TaskItem::Field upd_field() const { return prop["update.field"].value<TaskItem::Field>(); }
+    void upd_setField(TaskItem::Field f) { prop["update.field"] = QVariant::fromValue(f); }
+
+    QString upd_oldValue() const { return prop["update.old_value"].toString(); }
+    void upd_setOldValue(const QString &s) { prop["update.old_value"] = s; }
+
+    QString upd_newValue() const { return prop["update.new_value"].toString(); }
+    void upd_setNewValue(const QString &s) { prop["update.new_value"] = s; }
 };
 
 class TaskEditor : public QObject
@@ -138,8 +164,12 @@ public:
 
     void update(int id, TaskItem::Field field, const QString &value);
 
+    void undo();
+
 signals:
     void modified(int id, TaskItem::Field field, const QString &value);
+
+    void undoUpdate(int id, TaskItem::Field field, const QString &value);
 
 public slots:
 
@@ -147,11 +177,16 @@ private:
 
     TaskItem *parseLine(const QString &line);
 
+    void addOp(QSharedPointer<Operation> op);
+
+    void undo_update(QSharedPointer<Operation> op);
+
 private:
     ItemManager itemMgr;
 
-    QList<Mod> modList;
-    int modPos;
+    QList<QSharedPointer<Operation>> opList;
+    int curPos{-1};
+    int savePos{-1};
 
 };
 

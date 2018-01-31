@@ -17,10 +17,11 @@ int main(int argc, char *argv[])
 
     if (argc == 2) {
         QString filePath = QString::fromLocal8Bit(argv[1]);
-        te->resetByFile(filePath);
-        w.refreshTask();
-        QString fileName = Utils::basename(filePath);
-        w.setWindowTitle(QString("%1[*] - Arya Editor").arg(fileName));
+        w.openFile(filePath);
+//        te->resetByFile(filePath);
+//        w.refreshTask();
+//        QString fileName = Utils::basename(filePath);
+//        w.setWindowTitle(QString("%1[*] - Arya Editor").arg(fileName));
     }
 
     return a.exec();

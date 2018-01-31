@@ -19,14 +19,26 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-//    void setContent(const QList<TaskItem*> &items);
     void refreshTask();
+
+    void openFile(const QString &file);
 
 private slots:
     void handleItemChange(QTableWidgetItem *item);
 
+    void on_actionRedo_triggered();
+
+    void undoProp(int taskId, TaskItem::Field field, const QString &value);
+
+    void on_actionOpen_triggered();
+
+    void on_actionUndo_triggered();
+
 private:
     Ui::MainWindow *ui;
+
+    // task item id to table item in first column
+    QMap<int, QTableWidgetItem*> imap;
 };
 
 #endif // MAINWINDOW_H

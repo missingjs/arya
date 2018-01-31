@@ -31,6 +31,9 @@ void TaskEditor::resetByFile(const QString &path)
             itemMgr.insert(parseLine(line));
         }
     }
+
+    opList.clear();
+    curPos = savePos = -1;
 }
 
 QList<int> TaskEditor::validTasks()
@@ -45,9 +48,31 @@ QString TaskEditor::value(int id, TaskItem::Field field) const
 
 void TaskEditor::update(int id, TaskItem::Field field, const QString &value)
 {
+    auto oldValue = itemMgr.value(id, field);
     if (itemMgr.update(id, field, value)) {
+        auto op = Operation::upd();
+        op->upd_setItemId(id);
+        op->upd_setField(field);
+        op->upd_setOldValue(oldValue);
+        op->upd_setNewValue(value);
+        addOp(op);
         emit modified(id, field, value);
     }
+}
+
+void TaskEditor::undo()
+{
+    if (curPos < 0) {
+        return;
+    }
+
+    auto op = opList[curPos];
+    switch (op->type) {
+    case Operation::Type::UPDATE:
+        undo_update(op);
+        break;
+    }
+    --curPos;
 }
 
 TaskItem *TaskEditor::parseLine(const QString &line)
@@ -78,6 +103,25 @@ TaskItem *TaskEditor::parseLine(const QString &line)
     return item;
 }
 
+void TaskEditor::addOp(QSharedPointer<Operation> op)
+{
+    if (curPos == opList.size() - 1) {
+        opList.append(op);
+    } else {
+        opList[curPos+1] = op;
+    }
+    ++curPos;
+}
+
+void TaskEditor::undo_update(QSharedPointer<Operation> op)
+{
+    int id = op->upd_itemId();
+    auto field = op->upd_field();
+    auto value = op->upd_oldValue();
+    itemMgr.update(id, field, value);
+    emit undoUpdate(id, field, value);
+}
+
 ItemManager::~ItemManager()
 {
     reset();
@@ -103,20 +147,25 @@ void ItemManager::insert(TaskItem *item)
     ++node_count;
 }
 
-void ItemManager::insert(int prev, TaskItem *item)
+void ItemManager::insert(TaskItem *item, int next)
 {
-    auto pvItem = nmap.value(prev);
-    if (!pvItem) {
+    if (!item) {
         return;
     }
 
-    auto nxItem = pvItem->next;
-    pvItem->next = item;
-    item->prev = pvItem;
-    if (nxItem) {
-        item->next = nxItem;
-        nxItem->prev = item;
+    auto nxItem = nmap.value(next);
+    if (!nxItem) {
+        return;
     }
+
+    auto pvItem = nxItem->prev;
+    if (pvItem) {
+        pvItem->next = item;
+        item->prev = pvItem;
+    }
+    item->next = nxItem;
+    nxItem->prev = item;
+
     ++node_count;
 }
 
